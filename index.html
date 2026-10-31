@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Резюме — конструктор</title>
+  <meta name="description" content="Конструктор резюме: заполняйте поля, смотрите результат вживую, выбирайте шаблон и сохраняйте в PDF.">
+  <meta name="theme-color" content="#eef0f4">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📄</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=PT+Serif:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg: #eef0f4; --card: #fff; --ink: #161a23; --muted: #6b7280; --line: #e2e5ec; --accent: #2563eb; }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 Inter, system-ui, sans-serif; }
+    button, input, textarea, select { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    .topbar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top)) 16px 10px; background: rgba(238, 240, 244, 0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+    .topbar h1 { margin: 0; font-size: 19px; font-weight: 800; }
+    .topbar .sp { flex: 1; }
+    .btn { padding: 10px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); font-weight: 700; font-size: 14px; }
+    .btn--primary { border: 0; background: var(--ink); color: #fff; }
+    .switch { display: none; padding: 4px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); }
+    .switch button { padding: 7px 12px; border: 0; border-radius: 9px; background: transparent; font-weight: 700; font-size: 14px; color: var(--muted); }
+    .switch button.on { background: var(--ink); color: #fff; }
+    .layout { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 20px; max-width: 1280px; margin: 0 auto; padding: 20px 16px 60px; }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: minmax(0, 1fr); }
+      .switch { display: flex; }
+      body[data-view="edit"] .preview-col, body[data-view="view"] .editor { display: none; }
+    }
+    @media (max-width: 560px) {
+      .topbar { flex-wrap: wrap; }
+      .topbar h1 { font-size: 17px; }
+      .topbar .sp { display: none; }
+      .switch { order: 3; width: 100%; }
+      .switch button { flex: 1; }
+      #reset { margin-left: auto; }
+    }
+    .editor { display: grid; gap: 14px; align-content: start; }
+    .card { padding: 18px; border-radius: 18px; background: var(--card); border: 1px solid var(--line); }
+    .card h2 { margin: 0 0 12px; font-size: 15px; font-weight: 800; }
+    .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .editor { min-width: 0; }
+    .field input, .field textarea, .field select { width: 100%; min-width: 0; }
+    .field { display: grid; gap: 4px; margin-bottom: 10px; font-size: 12px; font-weight: 700; color: var(--muted); }
+    .field input, .field textarea, .field select { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: #fafbfc; font-size: 15px; font-weight: 500; color: var(--ink); outline: none; }
+    .field input:focus, .field textarea:focus { border-color: var(--accent); }
+    .field textarea { resize: vertical; min-height: 70px; }
+    .item { position: relative; padding: 12px; margin-bottom: 10px; border: 1px dashed var(--line); border-radius: 14px; }
+    .item .rm { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border: 0; border-radius: 8px; background: #fef2f2; color: #dc2626; }
+    .add { width: 100%; padding: 10px; border: 1px dashed var(--line); border-radius: 12px; background: transparent; color: var(--muted); font-weight: 700; }
+    .templates { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .tpl { padding: 10px 6px; border: 2px solid var(--line); border-radius: 12px; background: #fafbfc; font-weight: 700; font-size: 13px; }
+    .tpl.on { border-color: var(--ink); background: #fff; }
+    .colors { display: flex; gap: 8px; margin-top: 12px; }
+    .colors button { width: 32px; height: 32px; border: 3px solid #fff; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1px var(--line); }
+    .colors button.on { box-shadow: 0 0 0 2px var(--c); }
+
+    .preview-col { position: sticky; top: 70px; align-self: start; }
+    .page-wrap { width: 100%; overflow: hidden; }
+    .page { width: 794px; min-height: 1123px; padding: 56px 60px; background: #fff; box-shadow: 0 30px 60px -30px rgba(22, 26, 35, 0.35); transform-origin: 0 0; color: #1f2430; font-size: 14px; line-height: 1.55; }
+    .page h1 { margin: 0; font-size: 34px; line-height: 1.1; }
+    .page .role { margin: 6px 0 0; font-size: 17px; color: var(--accent); font-weight: 600; }
+    .page .contacts { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 14px 0 0; color: #5b6170; font-size: 13px; }
+    .page h3 { margin: 26px 0 10px; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
+    .page .job { margin-bottom: 14px; }
+    .page .job__head { display: flex; justify-content: space-between; gap: 10px; }
+    .page .job b { font-size: 15px; }
+    .page .job span { color: #6b7280; font-size: 13px; white-space: nowrap; }
+    .page .job em { display: block; font-style: normal; color: #4b5263; }
+    .page .job p { margin: 4px 0 0; white-space: pre-line; }
+    .page .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .page .tags span { padding: 4px 10px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 10%, #fff); color: #1f2430; font-size: 13px; }
+    .page .summary { margin: 0; white-space: pre-line; }
+    /* Шаблон «Модерн»: цветная колонка слева */
+    .page.modern { display: grid; grid-template-columns: 230px 1fr; padding: 0; }
+    .page.modern .side { padding: 48px 26px; background: var(--accent); color: #fff; }
+    .page.modern .side h3 { color: rgba(255, 255, 255, 0.75); }
+    .page.modern .side .contacts { display: grid; color: #fff; }
+    .page.modern .side .tags span { background: rgba(255, 255, 255, 0.18); color: #fff; }
+    .page.modern .main { padding: 48px 40px; }
+    .page.modern .role { color: #4b5263; }
+    /* Шаблон «Классика»: антиква и линии */
+    .page.classic { font-family: 'PT Serif', Georgia, serif; }
+    .page.classic header { text-align: center; padding-bottom: 16px; border-bottom: 2px solid var(--accent); }
+    .page.classic .contacts { justify-content: center; }
+    .page.classic h3 { padding-bottom: 6px; border-bottom: 1px solid #e5e7eb; font-family: Inter, sans-serif; }
+    .tip { margin-top: 10px; color: var(--muted); font-size: 13px; text-align: center; }
+
+    @media print {
+      @page { size: A4; margin: 0; }
+      body { background: #fff; }
+      .topbar, .editor, .tip { display: none !important; }
+      .layout { display: block; padding: 0; }
+      .preview-col { display: block !important; position: static; }
+      .page-wrap { height: auto !important; overflow: visible; }
+      .page { transform: none !important; box-shadow: none; width: 210mm; min-height: 297mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body data-view="edit">
+  <header class="topbar">
+    <h1>📄 Резюме</h1>
+    <div class="switch" role="tablist"><button class="on" data-view="edit">Редактор</button><button data-view="view">Просмотр</button></div>
+    <span class="sp"></span>
+    <button class="btn" id="reset" title="Очистить всё">Очистить</button>
+    <button class="btn btn--primary" id="pdf">Скачать PDF</button>
+  </header>
+
+  <div class="layout">
+    <div class="editor" id="editor">
+      <section class="card">
+        <h2>Оформление</h2>
+        <div class="templates" id="templates"></div>
+        <div class="colors" id="colors"></div>
+      </section>
+      <section class="card">
+        <h2>Основное</h2>
+        <div class="grid2"><label class="field">Имя и фамилия<input data-k="name"></label><label class="field">Должность<input data-k="role"></label></div>
+        <div class="grid2"><label class="field">Телефон<input data-k="phone"></label><label class="field">Почта<input data-k="email"></label></div>
+        <div class="grid2"><label class="field">Город<input data-k="city"></label><label class="field">Сайт / Telegram<input data-k="site"></label></div>
+        <label class="field">О себе<textarea data-k="summary" rows="4"></textarea></label>
+      </section>
+      <section class="card"><h2>Опыт работы</h2><div id="jobs"></div><button class="add" data-add="jobs">＋ Добавить место работы</button></section>
+      <section class="card"><h2>Образование</h2><div id="edu"></div><button class="add" data-add="edu">＋ Добавить учёбу</button></section>
+      <section class="card">
+        <h2>Навыки и языки</h2>
+        <label class="field">Навыки (через запятую)<input data-k="skills"></label>
+        <label class="field">Языки (через запятую)<input data-k="langs"></label>
+      </section>
+    </div>
+    <div class="preview-col">
+      <div class="page-wrap" id="wrap"><article class="page" id="page"></article></div>
+      <p class="tip">PDF: нажмите «Скачать PDF» и выберите «Сохранить как PDF» в окне печати</p>
+    </div>
+  </div>
+
+  <script>
+    const COLORS = ['#2563eb', '#0f766e', '#7c3aed', '#be123c', '#1f2937', '#b45309'];
+    const TEMPLATES = [['modern', 'Модерн'], ['clean', 'Минимал'], ['classic', 'Классика']];
+    const DEMO = {
+      tpl: 'modern', color: '#2563eb', name: 'Анна Смирнова', role: 'Frontend-разработчик', phone: '+7 900 000-00-00', email: 'anna@example.com', city: 'Москва', site: 't.me/example',
+      summary: 'Делаю быстрые и удобные интерфейсы. 4 года опыта в веб-разработке, люблю понятный код и аккуратную вёрстку.',
+      jobs: [{ title: 'Frontend-разработчик', org: 'Студия «Пиксель»', period: '2023 — сейчас', desc: '• Разработка интерфейсов на React\n• Ускорила загрузку сайта на 40%' }, { title: 'Верстальщик', org: 'Фриланс', period: '2021 — 2023', desc: '• 30+ лендингов для малого бизнеса' }],
+      edu: [{ title: 'Прикладная информатика', org: 'Университет', period: '2017 — 2021', desc: '' }],
+      skills: 'JavaScript, TypeScript, React, HTML/CSS, Git, Figma', langs: 'Русский — родной, Английский — B2',
+    };
+    const $ = (id) => document.getElementById(id);
+    const esc = (s = '') => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    let data = (() => { try { return JSON.parse(localStorage.getItem('resume_v1')) ?? structuredClone(DEMO); } catch { return structuredClone(DEMO); } })();
+    const save = () => { try { localStorage.setItem('resume_v1', JSON.stringify(data)); } catch {} };
+
+    function renderEditor() {
+      document.querySelectorAll('[data-k]').forEach((el) => { el.value = data[el.dataset.k] ?? ''; });
+      $('templates').innerHTML = TEMPLATES.map(([k, n]) => `<button class="tpl ${data.tpl === k ? 'on' : ''}" data-tpl="${k}">${n}</button>`).join('');
+      $('colors').innerHTML = COLORS.map((c) => `<button class="${data.color === c ? 'on' : ''}" data-color="${c}" style="--c:${c}" aria-label="Цвет ${c}"></button>`).join('');
+      for (const list of ['jobs', 'edu']) {
+        $(list).innerHTML = data[list].map((it, i) => `<div class="item"><button class="rm" data-rm="${list}:${i}" aria-label="Удалить">✕</button>
+          <div class="grid2"><label class="field">${list === 'jobs' ? 'Должность' : 'Специальность'}<input data-list="${list}" data-i="${i}" data-f="title" value="${esc(it.title)}"></label><label class="field">${list === 'jobs' ? 'Компания' : 'Учебное заведение'}<input data-list="${list}" data-i="${i}" data-f="org" value="${esc(it.org)}"></label></div>
+          <label class="field">Период<input data-list="${list}" data-i="${i}" data-f="period" value="${esc(it.period)}"></label>
+          ${list === 'jobs' ? `<label class="field">Обязанности и достижения<textarea data-list="${list}" data-i="${i}" data-f="desc" rows="3">${esc(it.desc)}</textarea></label>` : ''}</div>`).join('');
+      }
+    }
+
+    function renderPage() {
+      const d = data;
+      document.documentElement.style.setProperty('--accent', d.color);
+      const contacts = [d.phone && `📞 ${esc(d.phone)}`, d.email && `✉️ ${esc(d.email)}`, d.city && `📍 ${esc(d.city)}`, d.site && `🔗 ${esc(d.site)}`].filter(Boolean).map((c) => `<span>${c}</span>`).join('');
+      const tags = (s) => s ? `<div class="tags">${s.split(',').map((x) => x.trim()).filter(Boolean).map((x) => `<span>${esc(x)}</span>`).join('')}</div>` : '';
+      const jobs = (list) => list.filter((j) => j.title || j.org).map((j) => `<div class="job"><div class="job__head"><b>${esc(j.title)}</b><span>${esc(j.period)}</span></div><em>${esc(j.org)}</em>${j.desc ? `<p>${esc(j.desc)}</p>` : ''}</div>`).join('');
+      const head = `<header><h1>${esc(d.name) || 'Ваше имя'}</h1><p class="role">${esc(d.role)}</p>${d.tpl !== 'modern' ? `<div class="contacts">${contacts}</div>` : ''}</header>`;
+      const main = `${d.summary ? `<h3>О себе</h3><p class="summary">${esc(d.summary)}</p>` : ''}${d.jobs.length ? `<h3>Опыт работы</h3>${jobs(d.jobs)}` : ''}${d.edu.length ? `<h3>Образование</h3>${jobs(d.edu)}` : ''}`;
+      const page = $('page');
+      page.className = `page ${d.tpl}`;
+      page.innerHTML = d.tpl === 'modern'
+        ? `<aside class="side"><h3>Контакты</h3><div class="contacts">${contacts}</div>${d.skills ? `<h3>Навыки</h3>${tags(d.skills)}` : ''}${d.langs ? `<h3>Языки</h3>${tags(d.langs)}` : ''}</aside><div class="main">${head}${main}</div>`
+        : `${head}${main}${d.skills ? `<h3>Навыки</h3>${tags(d.skills)}` : ''}${d.langs ? `<h3>Языки</h3>${tags(d.langs)}` : ''}`;
+      fit();
+    }
+    function fit() {
+      const wrap = $('wrap'), page = $('page');
+      const s = Math.min(1, wrap.clientWidth / 794);
+      page.style.transform = `scale(${s})`;
+      wrap.style.height = `${page.offsetHeight * s}px`;
+    }
+
+    $('editor').addEventListener('input', (e) => {
+      const el = e.target;
+      if (el.dataset.k) data[el.dataset.k] = el.value;
+      if (el.dataset.list) data[el.dataset.list][+el.dataset.i][el.dataset.f] = el.value;
+      save(); renderPage();
+    });
+    $('editor').addEventListener('click', (e) => {
+      const t = e.target.closest('[data-tpl]'), c = e.target.closest('[data-color]'), a = e.target.closest('[data-add]'), r = e.target.closest('[data-rm]');
+      if (t) data.tpl = t.dataset.tpl;
+      else if (c) data.color = c.dataset.color;
+      else if (a) data[a.dataset.add].push({ title: '', org: '', period: '', desc: '' });
+      else if (r) { const [list, i] = r.dataset.rm.split(':'); data[list].splice(+i, 1); }
+      else return;
+      save(); renderEditor(); renderPage();
+    });
+    document.querySelector('.switch').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-view]'); if (!b) return;
+      document.body.dataset.view = b.dataset.view;
+      document.querySelectorAll('.switch button').forEach((x) => x.classList.toggle('on', x === b));
+      requestAnimationFrame(fit);
+    });
+    $('pdf').onclick = () => { document.title = `Резюме — ${data.name || 'без имени'}`; window.print(); document.title = 'Резюме — конструктор'; };
+    $('reset').onclick = () => { if (confirm('Очистить все поля?')) { data = { tpl: data.tpl, color: data.color, name: '', role: '', phone: '', email: '', city: '', site: '', summary: '', jobs: [], edu: [], skills: '', langs: '' }; save(); renderEditor(); renderPage(); } };
+    window.addEventListener('resize', fit);
+    renderEditor(); renderPage();
+  </script>
+</body>
+</html>
